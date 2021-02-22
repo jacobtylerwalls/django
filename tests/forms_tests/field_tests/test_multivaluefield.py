@@ -35,7 +35,7 @@ class ComplexField(MultiValueField):
         fields = (
             CharField(),
             MultipleChoiceField(choices=beatles),
-            SplitDateTimeField(),
+            SplitDateTimeField(required=False),
         )
         super().__init__(fields, **kwargs)
 
@@ -172,3 +172,17 @@ class MultiValueFieldTest(SimpleTestCase):
         })
         form.is_valid()
         self.assertEqual(form.cleaned_data['field1'], 'some text,JP,2007-04-25 06:24:00')
+
+    def test_mixed_required_attributes(self):
+        class ComplexFieldForm(Form):
+            f = ComplexField(widget=ComplexMultiWidget, require_all_fields=False)
+
+        form = ComplexFieldForm({
+            'field1_0': 'some text',
+            'field1_1': ['J', 'P'],
+            'field1_2_0': '2007-04-25',
+            'field1_2_1': '',  # not required
+        })
+        form.is_valid()
+        self.assertInHTML('<input type="text" name="f_0" required id="id_f_0">', form.as_p())
+        self.assertInHTML('<input type="text" name="f_2_1" id="id_f_2_1">', form.as_p())
