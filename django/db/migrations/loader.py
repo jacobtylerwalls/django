@@ -254,6 +254,10 @@ class MigrationLoader:
                     # partially applied. Remove it from the graph and remap
                     # dependencies to it (#25945).
                     self.graph.remove_replacement_node(key, migration.replaces)
+        # Remove replacements if present.
+        else:
+            for key, migration in self.replacements.items():
+                self.graph.remove_replacement_node(key, migration.replaces)
         # Ensure the graph is consistent.
         try:
             self.graph.validate_consistency()

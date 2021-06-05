@@ -715,6 +715,12 @@ You must then transition the squashed migration to a normal migration by:
     Once you've squashed a migration, you should not then re-squash that squashed
     migration until you have fully transitioned it to a normal migration.
 
+.. versionchanged:: 4.0
+
+    Added support for migrating to an individual migration belonging to a
+    squashed set when both the entire set and the squashed replacement exist
+    on disk. In this scenario, none of the replacements will be executed: only
+    the migrations they replaced, even for dependencies in other apps.
 
 .. _migration-serializing:
 

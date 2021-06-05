@@ -104,6 +104,29 @@ class ExecutorTests(MigrationTestBase):
         self.assertTableNotExists("migrations_author")
         self.assertTableNotExists("migrations_book")
 
+    @override_settings(MIGRATION_MODULES={'migrations': 'migrations.test_migrations_squashed'})
+    def test_migrate_to_replaced_migration(self):
+        executor = MigrationExecutor(connection)
+
+        # Run a squashed migration.
+        self.assertTableNotExists('migrations_author')
+        self.assertTableNotExists('migrations_book"')
+        executor.migrate([('migrations', '0001_squashed_0002')])
+        self.assertTableExists('migrations_author')
+        self.assertTableExists('migrations_book')
+
+        # Migrate to 0001_initial.
+        executor.loader.build_graph()
+        executor.migrate([('migrations', '0001_initial')])
+        self.assertTableExists('migrations_author')
+        self.assertTableNotExists('migrations_book')
+
+        # Migrate to zero.
+        executor.loader.build_graph()
+        executor.migrate([('migrations', None)])
+        self.assertTableNotExists('migrations_author')
+        self.assertTableNotExists('migrations_book')
+
     @override_settings(MIGRATION_MODULES={"migrations": "migrations.test_migrations_non_atomic"})
     def test_non_atomic_migration(self):
         """

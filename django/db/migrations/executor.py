@@ -24,6 +24,11 @@ class MigrationExecutor:
         Given a set of targets, return a list of (Migration instance, backwards?).
         """
         plan = []
+        # If any target is not None and is missing from the graph,
+        # reload without using replacements.
+        if any(target[1] is not None and target not in self.loader.graph.node_map for target in targets):
+            self.loader.replace_migrations = False
+            self.loader.build_graph()
         if clean_start:
             applied = {}
         else:

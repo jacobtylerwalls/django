@@ -239,7 +239,8 @@ Management Commands
 Migrations
 ~~~~~~~~~~
 
-* ...
+* Migrating to individual migrations that had been replaced by squashing is
+  now allowed.
 
 Models
 ~~~~~~

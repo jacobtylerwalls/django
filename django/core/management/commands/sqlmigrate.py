@@ -55,6 +55,11 @@ class Command(BaseCommand):
                 migration_name, app_label))
         target = (app_label, migration.name)
 
+        # Reload the graph with replacements if the target is missing.
+        if target not in loader.graph.nodes:
+            loader.replace_migrations = True
+            loader.build_graph()
+
         # Show begin/end around output for atomic migrations, if the database
         # supports transactional DDL.
         self.output_transaction = migration.atomic and connection.features.can_rollback_ddl

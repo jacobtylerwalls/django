@@ -490,6 +490,22 @@ class LoaderTests(TestCase):
         with self.assertRaisesMessage(NodeNotFoundError, msg):
             loader.graph.forwards_plan(('app1', '3_auto'))
 
+        # Possible if loader.replace_migrations is False.
+        # MigrationExecutor.migration_plan() is responsible for setting it False.
+        loader.replace_migrations = False
+        loader.build_graph()
+        plan = set(loader.graph.forwards_plan(('app1', '3_auto')))
+        plan = plan - loader.applied_migrations.keys()
+        expected_plan = {
+            ('app1', '1_auto'),
+            ('app2', '1_auto'),
+            ('app2', '2_auto'),
+            ('app1', '2_auto'),
+            ('app1', '3_auto'),
+        }
+        self.assertEqual(plan, expected_plan)
+        loader.replace_migrations = True
+
         # Fake-apply a few from app1: unsquashes migration in app1.
         self.record_applied(recorder, 'app1', '1_auto')
         self.record_applied(recorder, 'app1', '2_auto')
