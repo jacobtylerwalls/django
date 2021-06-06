@@ -483,6 +483,13 @@ class LoaderTests(TestCase):
         }
         self.assertEqual(plan, expected_plan)
 
+        # Load with nothing applied and migrate to a replaced migration.
+        # Not possible if loader.replace_migrations is True (default).
+        loader.build_graph()
+        msg = "Node ('app1', '3_auto') not a valid node"
+        with self.assertRaisesMessage(NodeNotFoundError, msg):
+            loader.graph.forwards_plan(('app1', '3_auto'))
+
         # Fake-apply a few from app1: unsquashes migration in app1.
         self.record_applied(recorder, 'app1', '1_auto')
         self.record_applied(recorder, 'app1', '2_auto')
