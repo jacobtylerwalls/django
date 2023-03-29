@@ -7,7 +7,7 @@ from threading import Lock
 
 from django.core.exceptions import EmptyResultSet, FieldError, FullResultSet
 from django.db import DEFAULT_DB_ALIAS, connection
-from django.db.models import CharField, Count, Exists, F, Max, OuterRef, Q
+from django.db.models import CharField, Count, Exists, F, Max, OuterRef, Q, Subquery
 from django.db.models.expressions import RawSQL
 from django.db.models.functions import ExtractYear, Length, LTrim
 from django.db.models.sql.constants import LOUTER
@@ -3216,6 +3216,10 @@ class ExcludeTests(TestCase):
         cls.r2 = Responsibility.objects.create(description="Programming")
         JobResponsibilities.objects.create(job=cls.j1, responsibility=cls.r1)
         JobResponsibilities.objects.create(job=cls.j2, responsibility=cls.r2)
+        cls.number_with_null = Number.objects.create(num=1, other_num=1)
+        cls.number_without_null = Number.objects.create(
+            num=2, other_num=2, another_num=2
+        )
 
     def test_to_field(self):
         self.assertSequenceEqual(
@@ -3291,15 +3295,51 @@ class ExcludeTests(TestCase):
         self.assertFalse(qs.exists())
 
     def test_exclude_nullable_fields(self):
-        number = Number.objects.create(num=1, other_num=1)
-        Number.objects.create(num=2, other_num=2, another_num=2)
         self.assertSequenceEqual(
             Number.objects.exclude(other_num=F("another_num")),
-            [number],
+            [self.number_with_null],
         )
         self.assertSequenceEqual(
             Number.objects.exclude(num=F("another_num")),
-            [number],
+            [self.number_with_null],
+        )
+
+    def test_exclude_nullable_fields_annotation(self):
+        from django.db.models.functions import Abs
+
+        self.assertSequenceEqual(
+            Number.objects.annotate(x=Abs("another_num")).exclude(x=2),
+            [self.number_with_null],
+        )
+        self.assertSequenceEqual(
+            Number.objects.annotate(x=Abs("another_num")).exclude(other_num=F("x")),
+            [self.number_with_null],
+        )
+        self.assertSequenceEqual(
+            Number.objects.annotate(x=Abs("another_num")).exclude(num=F("x")),
+            [self.number_with_null],
+        )
+
+    def test_exclude_nullable_subquery_annotation(self):
+        subquery_with_null = Subquery(
+            Number.objects.filter(num=1).values("another_num")[:1]
+        )
+        self.assertSequenceEqual(
+            Number.objects.annotate(current_num=subquery_with_null).exclude(
+                current_num=1
+            ),
+            [self.number_with_null],
+        )
+
+    def test_exclude_aliased_nullable_fields(self):
+        qs = Number.objects.alias(aliased_num=F("num"))
+        self.assertSequenceEqual(
+            qs.exclude(another_num=F("aliased_num")),
+            [self.number_with_null],
+        )
+        self.assertSequenceEqual(
+            qs.exclude(aliased_num=F("another_num")),
+            [self.number_with_null],
         )
 
     def test_exclude_multivalued_exists(self):

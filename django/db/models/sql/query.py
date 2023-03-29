@@ -1400,6 +1400,21 @@ class Query(BaseExpression):
 
         if reffed_expression:
             condition = self.build_lookup(lookups, reffed_expression, value)
+            # When col is nullable, add IS NOT NULL.
+            if (
+                current_negated
+                and (condition.lookup_name != "isnull" or condition.rhs is False)
+                and condition.rhs is not None
+                and (col := next(self._gen_cols([reffed_expression]), None))
+                and self.is_nullable(col.target)
+            ):
+                target = col.target
+                lookup_class = target.get_lookup("isnull")
+                col = self._get_col(target, target, self.get_initial_alias())
+                return (
+                    WhereNode([condition, lookup_class(col, False)], connector=AND),
+                    [],
+                )
             return WhereNode([condition], connector=AND), []
 
         opts = self.get_meta()
@@ -1476,10 +1491,13 @@ class Query(BaseExpression):
                     lookup_class = targets[0].get_lookup("isnull")
                     col = self._get_col(targets[0], join_info.targets[0], alias)
                     clause.add(lookup_class(col, False), AND)
-                # If someval is a nullable column, someval IS NOT NULL is
-                # added.
-                if isinstance(value, Col) and self.is_nullable(value.target):
-                    lookup_class = value.target.get_lookup("isnull")
+                # If rhs is a nullable expression, rhs IS NOT NULL is added.
+                if isinstance(value, Col):
+                    rhs_col = value
+                else:
+                    rhs_col = next(self._gen_cols([condition.rhs]), None)
+                if rhs_col is not None and self.is_nullable(rhs_col.target):
+                    lookup_class = rhs_col.target.get_lookup("isnull")
                     clause.add(lookup_class(value, False), AND)
         return clause, used_joins if not require_outer else ()
 
