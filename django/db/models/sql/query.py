@@ -1344,7 +1344,7 @@ class Query(BaseExpression):
         branch_negated is set on first negation, but current_negated is
         flipped for each negation.
 
-        Note that add_filter will not do any negating itself, that is done
+        Note that build_filter will not do any negating itself, that is done
         upper in the code by add_q().
 
         The 'can_reuse' is a set of reusable joins for multijoins.
