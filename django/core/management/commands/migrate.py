@@ -19,14 +19,8 @@ class Command(BaseCommand):
     help = (
         "Updates database schema. Manages both apps with migrations and those without."
     )
-    requires_system_checks = []
 
     def add_arguments(self, parser):
-        parser.add_argument(
-            "--skip-checks",
-            action="store_true",
-            help="Skip system checks.",
-        )
         parser.add_argument(
             "app_label",
             nargs="?",
@@ -99,7 +93,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         database = options["database"]
         if not options["skip_checks"]:
-            self.check(databases=[database])
+            self.check(tags=self.requires_system_checks, databases=[database])
 
         self.verbosity = options["verbosity"]
         self.interactive = options["interactive"]

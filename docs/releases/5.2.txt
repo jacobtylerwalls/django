@@ -413,6 +413,10 @@ Miscellaneous
   provided. Previously, they were ignored if :attr:`.UniqueConstraint.fields`
   was set without a :attr:`.UniqueConstraint.condition`.
 
+* ``migrate`` and ``runserver`` now respect the value of ``requires_system_checks``
+  if overridden. As a consequence, when using ``call_command()`` to invoke these
+  commands, system checks must be enabled with ``skip_checks=False``.
+
 * The :func:`~django.template.context_processors.debug` context processor is no
   longer included in the default project template.
 
