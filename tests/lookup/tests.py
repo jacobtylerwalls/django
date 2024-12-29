@@ -1064,6 +1064,15 @@ class LookupTests(TestCase):
         Season.objects.create(year=2012, gt=None)
         self.assertQuerySetEqual(Season.objects.filter(gt__regex=r"^$"), [])
 
+    def test_regex_lookup_with_subquery(self):
+        author = Author.objects.create(name="Isabella")
+        qs = Author.objects.annotate(
+            unknown_age=models.Subquery(
+                Author.objects.filter(age__isnull=True).values("name")
+            )
+        ).filter(name__regex=models.F("unknown_age"))
+        self.assertSequenceEqual(qs, [author])
+
     def test_textfield_exact_null(self):
         with self.assertNumQueries(1) as ctx:
             self.assertSequenceEqual(Author.objects.filter(bio=None), [self.au2])

@@ -230,7 +230,7 @@ class HasKeyLookup(PostgresOperatorLookup):
             compiler, connection
         ):
             sql_parts.append(template % (lhs_sql, "%s"))
-            params.extend(lhs_params + [rhs_json_path])
+            params.extend(list(lhs_params) + [rhs_json_path])
         return self._combine_sql_parts(sql_parts), tuple(params)
 
     def as_mysql(self, compiler, connection):
@@ -252,7 +252,7 @@ class HasKeyLookup(PostgresOperatorLookup):
             # queries but it is assumed that it cannot be evaded because the
             # path is JSON serialized.
             sql_parts.append(template % (lhs_sql, rhs_json_path))
-            params.extend(lhs_params)
+            params.extend(list(lhs_params) + [rhs_json_path])
         return self._combine_sql_parts(sql_parts), tuple(params)
 
     def as_postgresql(self, compiler, connection):
