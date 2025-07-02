@@ -16,6 +16,7 @@ from django.db import (
     transaction,
 )
 from django.db.models import (
+    CharField,
     Count,
     ExpressionWrapper,
     F,
@@ -969,6 +970,44 @@ class TestQuerying(TestCase):
             ),
             self.objs[3:5],
         )
+
+    def test_lookups_subquery(self):
+        bar_values = NullableJSONModel.objects.filter(value__has_key="bar")
+        list_value = bar_values.values("value__bar")[:1]
+        text_value = bar_values.annotate(bar_as_text=KT("value__bar")).values(
+            "bar_as_text"
+        )[:1]
+        text_lookups = {
+            "has_key",
+            "iexact",
+            "icontains",
+            "startswith",
+            "istartswith",
+            "endswith",
+            "iendswith",
+            "regex",
+            "iregex",
+        }
+        contains_lookups = {"contains", "contained_by"}
+        lookups_not_matching = {"gt", "lt", "has_key"}
+        for lookup in JSONField.get_lookups():
+            with self.subTest(lookup=lookup):
+                if lookup == "isnull":
+                    continue  # not allowed, rhs must be a literal boolean.
+                if (
+                    lookup in contains_lookups
+                    and not connection.features.supports_json_field_contains
+                ):
+                    continue
+                if lookup in text_lookups:
+                    rhs = Subquery(text_value, output_field=CharField())
+                else:
+                    rhs = Subquery(list_value)
+                qs = NullableJSONModel.objects.filter(**{f"value__bar__{lookup}": rhs})
+                if lookup in lookups_not_matching:
+                    self.assertIs(qs.exists(), False)
+                else:
+                    self.assertQuerySetEqual(qs, bar_values)
 
     @skipUnlessDBFeature("supports_json_field_contains")
     def test_array_key_contains(self):
