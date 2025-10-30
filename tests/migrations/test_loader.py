@@ -1,7 +1,12 @@
 import compileall
 import os
+import subprocess
+import sys
+import tempfile
 from importlib import import_module
+from pathlib import Path
 
+from django.conf import settings
 from django.db import connection, connections
 from django.db.migrations.exceptions import (
     AmbiguityError,
@@ -648,6 +653,57 @@ class LoaderTests(TestCase):
             test_module.__file__ = module_file
             test_module.__spec__.origin = module_origin
             test_module.__spec__.has_location = module_has_location
+
+    @override_settings(
+        MIGRATION_MODULES={
+            "app1": "migrations.test_migrations_squashed_replaced_order.default.app1",
+            "app2": "migrations.test_migrations_squashed_replaced_order.app2",
+            "app3": "migrations.test_migrations_squashed_replaced_order.app3",
+        }
+    )
+    @modify_settings(
+        INSTALLED_APPS={
+            "append": [
+                "migrations.test_migrations_squashed_replaced_order.default.app1",
+                "migrations.test_migrations_squashed_replaced_order.app2",
+                "migrations.test_migrations_squashed_replaced_order.app3",
+            ]
+        }
+    )
+    def test_loading_order_does_not_create_circular_dependency(self):
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".py", dir=os.getcwd(), delete=False
+        ) as test_settings:
+            test_settings.write(f"DATABASES = {settings.DATABASES}\n")
+            test_settings.write(f"INSTALLED_APPS = {settings.INSTALLED_APPS}\n")
+            test_settings.write(f"MIGRATION_MODULES = {settings.MIGRATION_MODULES}\n")
+            test_settings_name = test_settings.name
+        self.addCleanup(os.remove, test_settings_name)
+
+        test_environ = os.environ.copy()
+        test_environ["PYTHONPATH"] = str(Path(__file__).parent.parent)
+        test_environ["PYTHONHASHSEED"] = "10000"
+
+        # Before, showmigrations would fail with CircularDependencyError.
+        args = [
+            sys.executable,
+            "-m",
+            "django",
+            "showmigrations",
+            "test_migrations_squashed_replaced_order",
+            "--skip-checks",
+            "--settings",
+            Path(test_settings_name).stem,
+        ]
+        try:
+            subprocess.run(
+                args,
+                capture_output=True,
+                env=test_environ,
+                check=True,
+            )
+        except subprocess.CalledProcessError as err:
+            self.fail(err.stderr.decode("utf-8"))
 
 
 class PycLoaderTests(MigrationTestBase):
