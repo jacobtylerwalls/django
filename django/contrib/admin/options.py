@@ -377,7 +377,7 @@ class BaseModelAdmin(metaclass=forms.MediaDefiningClass):
         """
         try:
             return mark_safe(self.empty_value_display)
-        except AttributeError:
+        except (NameError, AttributeError):
             return mark_safe(self.admin_site.empty_value_display)
 
     def get_exclude(self, request, obj=None):
