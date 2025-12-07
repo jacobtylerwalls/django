@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   coverage:
-    if: github.repository == 'django/django'
+    if: github.repository == 'jacobtylerwalls/django'
     name: Coverage Tests (Windows)
     runs-on: windows-latest
     timeout-minutes: 60
@@ -45,7 +45,7 @@ jobs:
           COVERAGE_PROCESS_START: ${{ github.workspace }}/tests/.coveragerc
           RUNTESTS_DIR: ${{ github.workspace }}/tests
         run: |
-          python -Wall tests/runtests.py -v2
+          python -Wall tests/runtests.py annotations -v2
 
       - name: Generate coverage report
         if: success()
