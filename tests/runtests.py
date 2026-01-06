@@ -680,6 +680,7 @@ if __name__ == "__main__":
             "Only run test methods and classes matching test name pattern. "
             "Same as unittest -k option. Can be used multiple times."
         ),
+        default="test_bulk_create_mixed_db_defaults_function",
     )
     parser.add_argument(
         "--durations",

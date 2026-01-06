@@ -181,6 +181,11 @@ class DefaultTests(TestCase):
         DBDefaultsFunction.objects.bulk_create(instances)
 
         years = DBDefaultsFunction.objects.values_list("year", flat=True)
+        from django.conf import settings
+
+        print("TIME_ZONE: ", settings.TIME_ZONE)
+        print("CONNECTION TIME ZONE: ", connection.timezone)
+        print("TZINFO: ", timezone.now().tzinfo)
         self.assertCountEqual(years, [2000, timezone.now().year])
 
     @skipUnlessDBFeature("supports_expression_defaults")
