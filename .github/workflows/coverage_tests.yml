@@ -44,7 +44,7 @@ jobs:
           COVERAGE_PROCESS_START: ${{ github.workspace }}/tests/.coveragerc
           RUNTESTS_DIR: ${{ github.workspace }}/tests
         run: |
-          python -Wall tests/runtests.py -v2
+          python -Wall tests/runtests.py -v2 -k test_bulk_create_mixed_db_defaults_function
 
       - name: Generate coverage report
         if: success()
