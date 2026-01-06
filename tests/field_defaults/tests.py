@@ -184,6 +184,9 @@ class DefaultTests(TestCase):
         from django.conf import settings
 
         print("TIME_ZONE: ", settings.TIME_ZONE)
+        print(
+            "CONNECTION SETTING: ", settings.DATABASES["default"].get("TIME_ZONE", None)
+        )
         print("CONNECTION TIME ZONE: ", connection.timezone)
         print("TZINFO: ", timezone.now().tzinfo)
         self.assertCountEqual(years, [2000, timezone.now().year])
