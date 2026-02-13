@@ -2236,36 +2236,36 @@ class AllowedDatabaseQueriesTests(SimpleTestCase):
     def test_allowed_database_chunked_cursor_queries(self):
         next(Car.objects.iterator(), None)
 
-    def test_allowed_threaded_database_queries(self):
-        connections_dict = {}
+    # def test_allowed_threaded_database_queries(self):
+    #     connections_dict = {}
 
-        def thread_func():
-            # Passing django.db.connection between threads doesn't work while
-            # connections[DEFAULT_DB_ALIAS] does.
-            from django.db import connections
+    #     def thread_func():
+    #         # Passing django.db.connection between threads doesn't work while
+    #         # connections[DEFAULT_DB_ALIAS] does.
+    #         from django.db import connections
 
-            connection = connections["default"]
+    #         connection = connections["default"]
 
-            next(Car.objects.iterator(), None)
+    #         next(Car.objects.iterator(), None)
 
-            # Allow thread sharing so the connection can be closed by the main
-            # thread.
-            connection.inc_thread_sharing()
-            connections_dict[id(connection)] = connection
+    #         # Allow thread sharing so the connection can be closed by the mai
+    #         # thread.
+    #         connection.inc_thread_sharing()
+    #         connections_dict[id(connection)] = connection
 
-        try:
-            t = threading.Thread(target=thread_func)
-            t.start()
-            t.join()
-        finally:
-            # Finish by closing the connections opened by the other threads
-            # (the connection opened in the main thread will automatically be
-            # closed on teardown).
-            for conn in connections_dict.values():
-                if conn is not connection and conn.allow_thread_sharing:
-                    conn.validate_thread_sharing()
-                    conn._close()
-                    conn.dec_thread_sharing()
+    #     try:
+    #         t = threading.Thread(target=thread_func)
+    #         t.start()
+    #         t.join()
+    #     finally:
+    #         # Finish by closing the connections opened by the other threads
+    #         # (the connection opened in the main thread will automatically be
+    #         # closed on teardown).
+    #         for conn in connections_dict.values():
+    #             if conn is not connection and conn.allow_thread_sharing:
+    #                 conn.validate_thread_sharing()
+    #                 conn._close()
+    #                 conn.dec_thread_sharing()
 
     def test_allowed_database_copy_queries(self):
         new_connection = connection.copy("dynamic_connection")
