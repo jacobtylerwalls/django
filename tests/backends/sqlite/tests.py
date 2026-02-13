@@ -274,11 +274,14 @@ class ThreadSharing(TransactionTestCase):
         thread_connections = []
 
         def create_object():
+            conn = connections[DEFAULT_DB_ALIAS]
+            # Allow thread sharing so the connection can be closed by the
+            # main thread.
+            conn.inc_thread_sharing()
             Object.objects.create()
-            thread_connections.append(connections[DEFAULT_DB_ALIAS].connection)
-            assert thread_connections[-1].allow_thread_sharing
+            thread_connections.append(conn)
 
-        main_connection = connections[DEFAULT_DB_ALIAS].connection
+        main_connection = connections[DEFAULT_DB_ALIAS]
         try:
             create_object()
             thread = threading.Thread(target=create_object)
@@ -287,8 +290,10 @@ class ThreadSharing(TransactionTestCase):
             self.assertEqual(Object.objects.count(), 2)
         finally:
             for conn in thread_connections:
+                conn.validate_thread_sharing()
+                conn.dec_thread_sharing()
                 if conn is not main_connection:
-                    conn.close()
+                    conn._close()
 
 
 @unittest.skipUnless(connection.vendor == "sqlite", "SQLite tests")
