@@ -54,8 +54,6 @@ class DatabaseCreation(BaseDatabaseCreation):
     def get_test_db_clone_settings(self, suffix):
         orig_settings_dict = self.connection.settings_dict
         source_database_name = orig_settings_dict["NAME"] or ":memory:"
-        print("PRELIM: ", orig_settings_dict["NAME"])
-        print("HYPO: ", self._get_test_db_name())
         if not self.is_in_memory_db(source_database_name):
             root, ext = os.path.splitext(source_database_name)
             return {**orig_settings_dict, "NAME": f"{root}_{suffix}{ext}"}
@@ -68,7 +66,6 @@ class DatabaseCreation(BaseDatabaseCreation):
                 **orig_settings_dict,
                 "NAME": f"{self.connection.alias}_{suffix}.sqlite3",
             }
-            print("FINAL :", ret["NAME"])
             return ret
         raise NotSupportedError(
             f"Cloning with start method {start_method!r} is not supported."
@@ -149,6 +146,7 @@ class DatabaseCreation(BaseDatabaseCreation):
                 f"file:{alias}_{_worker_id}.sqlite3?mode=ro", uri=True
             )
             target_db = sqlite3.connect(connection_str, uri=True)
+            print("Restoring!... ", source_db)
             source_db.backup(target_db)
             source_db.close()
             # Update settings_dict in place.
