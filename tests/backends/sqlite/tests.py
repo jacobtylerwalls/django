@@ -276,6 +276,7 @@ class ThreadSharing(TransactionTestCase):
         def create_object():
             Object.objects.create()
             thread_connections.append(connections[DEFAULT_DB_ALIAS].connection)
+            assert thread_connections[-1].allow_thread_sharing
 
         main_connection = connections[DEFAULT_DB_ALIAS].connection
         try:
