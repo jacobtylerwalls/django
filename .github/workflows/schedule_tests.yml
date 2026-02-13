@@ -38,7 +38,7 @@ jobs:
         run: python -m pip install --upgrade pip wheel
       - run: python -m pip install -r tests/requirements/py3.txt -e .
       - name: Run tests
-        run: python -Wall tests/runtests.py -v2
+        run: python -Wall tests/runtests.py -v1
 
   pyc-only:
     runs-on: ubuntu-latest
