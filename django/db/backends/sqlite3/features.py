@@ -102,8 +102,8 @@ class DatabaseFeatures(BaseDatabaseFeatures):
                     "in-memory database": {
                         "servers.test_liveserverthread.LiveServerThreadTest."
                         "test_closes_connections",
-                        "servers.tests.LiveServerTestCloseConnectionTest."
-                        "test_closes_connections",
+                        # Skip the entire class to avoid starting a server.
+                        "servers.tests.LiveServerTestCloseConnectionTest",
                     },
                     "For SQLite in-memory tests, closing the connection destroys "
                     "the database.": {
