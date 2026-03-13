@@ -222,8 +222,10 @@ class Comment(models.Model):
 
 class ArticleCustomUUID(models.Model):
     class CustomUUIDField(models.UUIDField):
-        def get_prep_value(self, value):
-            return str(value)
+        def get_db_prep_value(self, value, connection, prepared=False):
+            if connection.features.has_native_uuid_field:
+                return str(value)
+            return value.hex
 
     id = CustomUUIDField(primary_key=True, default=uuid.uuid4)
     name = models.CharField(max_length=30)
