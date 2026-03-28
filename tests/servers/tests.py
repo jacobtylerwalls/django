@@ -115,7 +115,7 @@ class LiveServerInMemoryDatabaseLockTest(LiveServerBase):
         at the same time, if the requests do not share the same database
         connection.
         """
-        conn = self.server_thread.connections_override[DEFAULT_DB_ALIAS]
+        conn = self.server_thread.connections_override["other"]
         source_connection = conn.connection
         # Open a connection to the database.
         conn.connect()

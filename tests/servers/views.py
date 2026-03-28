@@ -21,7 +21,7 @@ def model_view(request):
 
 def create_model_instance(request):
     person = Person(name="emily")
-    person.save()
+    person.save(using="other")
     return HttpResponse()
 
 
