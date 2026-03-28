@@ -108,6 +108,8 @@ class LiveServerTestCloseConnectionTest(LiveServerBase):
 
 @unittest.skipUnless(connection.vendor == "sqlite", "SQLite specific test.")
 class LiveServerInMemoryDatabaseLockTest(LiveServerBase):
+    databases = {"default", "other"}
+
     def test_in_memory_database_lock(self):
         """
         With a threaded LiveServer and an in-memory database, an error can
@@ -342,6 +344,8 @@ class SingleThreadLiveServerViews(SingleThreadLiveServerTestCase):
 
 
 class LiveServerDatabase(LiveServerBase):
+    databases = {"default", "other"}
+
     def test_fixtures_loaded(self):
         """
         Fixtures are properly loaded and visible to the live server thread.
@@ -356,7 +360,7 @@ class LiveServerDatabase(LiveServerBase):
         with self.urlopen("/create_model_instance/"):
             pass
         self.assertQuerySetEqual(
-            Person.objects.order_by("pk"),
+            Person.objects.order_by("pk").using("other"),
             ["jane", "robert", "emily"],
             lambda b: b.name,
         )
@@ -410,6 +414,8 @@ class LiveServerPort(LiveServerBase):
 
 class LiveServerThreadedTests(LiveServerBase):
     """If LiveServerTestCase isn't threaded, these tests will hang."""
+
+    databases = {"default", "other"}
 
     def test_view_calls_subview(self):
         url = "/subview_calling_view/?%s" % urlencode({"url": self.live_server_url})

@@ -15,7 +15,7 @@ def streaming_example_view(request):
 
 
 def model_view(request):
-    people = Person.objects.all()
+    people = Person.objects.using("other")
     return HttpResponse("\n".join(person.name for person in people))
 
 
