@@ -30,6 +30,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from datetime import date, datetime, timedelta, timezone
+from http import HTTPStatus
 
 from pr_quality.errors import (
     CHECKS_FOOTER,
@@ -102,7 +103,8 @@ def github_request(method, path, token, repo, data=None, params=None):
         headers["Content-Type"] = "application/json"
     req = urllib.request.Request(url, data=body, headers=headers, method=method)
     with urllib.request.urlopen(req, timeout=URLOPEN_TIMEOUT_SECONDS) as response:
-        return json.loads(response.read())
+        if response.status != HTTPStatus.NO_CONTENT:
+            return json.loads(response.read())
 
 
 def get_recent_commit_count(pr_author, repo, token, since_days, max_count):
