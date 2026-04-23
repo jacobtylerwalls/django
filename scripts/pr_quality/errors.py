@@ -38,11 +38,7 @@ CHECKS_HEADER = (
     "items that need attention before it can be accepted for review."
 )
 
-CHECKS_FOOTER = (
-    "If you have questions about these requirements, please review the "
-    f"[contributing guidelines]({SUBMITTING_URL}) or ask for help on the "
-    f"[Django Forum]({FORUM_URL}/c/internals/mentorship/10)."
-)
+CHECKS_FOOTER = "If you have questions about these requirements, study them!"
 
 INCOMPLETE_CHECKLIST = (
     "Incomplete Checklist",
