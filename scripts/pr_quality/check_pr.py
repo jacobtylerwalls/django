@@ -529,7 +529,7 @@ def main(
     for id_to_delete in get_comment_ids_to_delete(pr_number, repo, token):
         github_request(
             "DELETE",
-            f"/issues/{pr_number}/comment/{id_to_delete}",
+            f"/issues/comments/{id_to_delete}",
             token,
             repo,
         )
