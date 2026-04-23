@@ -442,7 +442,7 @@ def main(
     commit_count = get_recent_commit_count(
         pr_author, repo, token, since_days=365 * 3, max_count=5
     )
-    if commit_count >= 5:
+    if commit_count >= 5_000:
         logger.info(
             "PR #%s author is an established contributor -- skipping all checks.",
             pr_number,
