@@ -144,6 +144,26 @@ def get_pr_total_changes(pr_number, repo, token):
     return total_changes
 
 
+def get_comment_ids_to_delete(pr_number, repo, token):
+    ids = []
+    page = 1
+    while True:
+        comments = github_request(
+            "GET",
+            f"/issues/{pr_number}/comments",
+            token,
+            repo,
+            params={"per_page": GITHUB_PER_PAGE, "page": page},
+        )
+        for comment in comments:
+            if CHECKS_HEADER in comment["body"]:
+                ids.append(comment["id"])
+        if len(comments) < GITHUB_PER_PAGE:
+            break
+        page += 1
+    return ids
+
+
 def strip_html_comments(text):
     """Return text with all HTML comments removed."""
     return re.sub(r"<!--.*?-->", "", text, flags=re.DOTALL)
@@ -505,6 +525,14 @@ def main(
     if not failures and not warning_msgs:
         logger.info("PR #%s passed all quality checks.", pr_number)
         return
+
+    for id_to_delete in get_comment_ids_to_delete(pr_number, repo, token):
+        github_request(
+            "DELETE",
+            f"/issues/{pr_number}/comment/{id_to_delete}",
+            token,
+            repo,
+        )
 
     github_request(
         "POST",
