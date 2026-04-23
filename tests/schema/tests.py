@@ -446,6 +446,7 @@ class SchemaTests(TransactionTestCase):
                 for capture_query in ctx.captured_queries
             )
         )
+        return None
 
     @skipUnlessDBFeature("can_create_inline_fk")
     def test_add_inline_fk_update_data(self):
