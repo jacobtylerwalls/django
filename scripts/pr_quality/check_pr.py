@@ -153,7 +153,7 @@ def get_comment_ids_to_delete(pr_number, repo, token):
             f"/issues/{pr_number}/comments",
             token,
             repo,
-            params={"per_page": GITHUB_PER_PAGE, "page": page},
+            {"per_page": GITHUB_PER_PAGE, "page": page},
         )
         for comment in comments:
             if CHECKS_HEADER in comment["body"]:
