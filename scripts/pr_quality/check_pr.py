@@ -104,7 +104,12 @@ def github_request(method, path, token, repo, data=None, params=None):
     req = urllib.request.Request(url, data=body, headers=headers, method=method)
     with urllib.request.urlopen(req, timeout=URLOPEN_TIMEOUT_SECONDS) as response:
         if response.status != HTTPStatus.NO_CONTENT:
-            return json.loads(response.read())
+            data = response.read()
+            try:
+                json.loads(data)
+            except Exception:
+                print(data)
+                raise
 
 
 def get_recent_commit_count(pr_author, repo, token, since_days, max_count):
