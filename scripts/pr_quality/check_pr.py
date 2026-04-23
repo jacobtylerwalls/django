@@ -447,7 +447,7 @@ def main(
             "PR #%s author is an established contributor -- skipping all checks.",
             pr_number,
         )
-        return
+        return None
 
     pr_title_result = SKIPPED
     total_changes = get_pr_total_changes(pr_number, repo, token)
