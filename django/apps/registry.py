@@ -301,7 +301,7 @@ class Apps:
             # Is this model swappable and the one given by to_string?
             if model._meta.swappable and model._meta.label_lower == to_string:
                 return model._meta.swappable
-        return None
+        return
 
     def set_available_apps(self, available):
         """
