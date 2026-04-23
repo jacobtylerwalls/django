@@ -411,6 +411,7 @@ class SchemaTests(TransactionTestCase):
                 if sql.startswith("ALTER TABLE") and "ADD CONSTRAINT" in sql
             ]
         )
+        return None
 
     @skipUnlessDBFeature("can_create_inline_fk", "supports_on_delete_db_cascade")
     def test_inline_fk_db_on_delete(self):
