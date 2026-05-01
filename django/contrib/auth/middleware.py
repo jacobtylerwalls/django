@@ -238,7 +238,7 @@ class RemoteUserMiddleware:
         return username
 
     def get_username(self, request):
-        if isinstance(request, ASGIRequest):
+        if isinstance(request, ASGIRequest) and self.header == "REMOTE_USER":
             return request.META["HTTP_" + self.header]
         return request.META[self.header]
 
