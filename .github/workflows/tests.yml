@@ -58,7 +58,52 @@ jobs:
           node-version: '24'
           cache: 'npm'
           cache-dependency-path: '**/package.json'
-      - run: npm install
+      - name: Diagnostic — before npm install
+        run: |
+          echo "=== runner image ==="
+          cat /etc/os-release | head -5
+          echo
+          echo "=== ~/.cache/puppeteer (before install) ==="
+          ls -laR ~/.cache/puppeteer/ 2>&1 || echo "directory does not exist"
+          echo
+          echo "=== ~/.npm cache size ==="
+          du -sh ~/.npm 2>&1 || echo "no ~/.npm"
+          echo
+          echo "=== system chrome binaries ==="
+          for bin in google-chrome google-chrome-stable chromium chromium-browser chrome; do
+            path=$(which "$bin" 2>/dev/null) && echo "$bin -> $path ($($bin --version 2>&1))" || echo "$bin: not found"
+          done
+          echo
+          echo "=== puppeteer-related env vars ==="
+          env | grep -iE 'puppeteer|chrome|npm_config' || echo "(none)"
+          echo
+          echo "=== puppeteer config files in repo ==="
+          find . -maxdepth 3 \( -name '.puppeteerrc*' -o -name 'puppeteer.config.*' -o -name '.npmrc' \) 2>/dev/null
+          echo
+          echo "=== npm config (script-related) ==="
+          npm config get ignore-scripts
+          npm config get fund
+          npm config get audit
+
+      - name: npm install (with foreground scripts)
+        run: npm install --foreground-scripts --loglevel=info
+
+      - name: Diagnostic — after npm install
+        run: |
+          echo "=== ~/.cache/puppeteer (after install) ==="
+          ls -laR ~/.cache/puppeteer/ 2>&1 || echo "directory does not exist"
+          echo
+          echo "=== installed puppeteer version ==="
+          cat node_modules/puppeteer/package.json | grep -E '"(name|version)"' | head -5
+          echo
+          echo "=== puppeteer's expected chrome version ==="
+          node -e "const p = require('puppeteer'); console.log('executablePath:', p.executablePath());" 2>&1 || echo "executablePath() failed"
+          echo
+          echo "=== does the expected path exist? ==="
+          EXPECTED=$(node -e "console.log(require('puppeteer').executablePath())" 2>/dev/null)
+          if [ -n "$EXPECTED" ]; then
+            ls -la "$EXPECTED" 2>&1 || echo "MISSING: $EXPECTED"
+          fi
       - run: npm test
 
   scripts-tests:
