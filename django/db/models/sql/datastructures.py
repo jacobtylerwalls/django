@@ -24,7 +24,20 @@ class Empty:
     pass
 
 
-class Join:
+from django.db.models.expressions import Expression
+
+
+class TableExpression(Expression):
+    is_composite = True
+
+    # Insert stuff hoisted from BaseTable/Join that might also
+    # be needed for compiling other TableExpressions into valid FROM... SQL
+
+
+# Simon: "Make members of alias_map subclasses of Expression instead of opaque
+# BaseTable and Join structures"
+# Simon: "TableExpression(Expresssion) that would serve as a base class for ..."
+class Join(TableExpression):
     """
     Used by sql.Query and sql.SQLCompiler to generate JOIN clauses into the
     FROM entry. For example, the SQL generated could be
@@ -73,6 +86,7 @@ class Join:
         self.nullable = nullable
         self.filtered_relation = filtered_relation
 
+    # Hoist a lot of this to TableExpression.
     def as_sql(self, compiler, connection):
         """
         Generate the full
@@ -126,6 +140,8 @@ class Join:
         )
         sql = "%s %s%s ON (%s)" % (
             self.join_type,
+            # for Join/BaseTable, a table_name is fine, but for TableExpression
+            # we need to compile its source expressions and use that instead.
             qn(self.table_name),
             alias_str,
             on_clause_sql,
@@ -178,7 +194,7 @@ class Join:
         return new
 
 
-class BaseTable:
+class BaseTable(TableExpression):
     """
     The BaseTable class is used for base table references in FROM clause. For
     example, the SQL "foo" in

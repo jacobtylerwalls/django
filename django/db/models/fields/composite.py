@@ -47,6 +47,16 @@ class CompositeAttribute:
             setattr(instance, attname, value)
 
 
+class CompositeField(Field):
+    is_composite = True
+
+    def __init__(self, *args, **kwargs):
+        # Lily's PR has some kwargs defaults here
+        self.fields = args  # named? mapping? from kwargs?
+
+    ...  # Any other methods that need hoisting from CompositePrimaryKey.
+
+
 class CompositePrimaryKey(Field):
     descriptor_class = CompositeAttribute
 
@@ -156,13 +166,13 @@ class CompositePrimaryKey(Field):
         return value
 
 
-CompositePrimaryKey.register_lookup(TupleExact)
-CompositePrimaryKey.register_lookup(TupleGreaterThan)
-CompositePrimaryKey.register_lookup(TupleGreaterThanOrEqual)
-CompositePrimaryKey.register_lookup(TupleLessThan)
-CompositePrimaryKey.register_lookup(TupleLessThanOrEqual)
-CompositePrimaryKey.register_lookup(TupleIn)
-CompositePrimaryKey.register_lookup(TupleIsNull)
+CompositeField.register_lookup(TupleExact)
+CompositeField.register_lookup(TupleGreaterThan)
+CompositeField.register_lookup(TupleGreaterThanOrEqual)
+CompositeField.register_lookup(TupleLessThan)
+CompositeField.register_lookup(TupleLessThanOrEqual)
+CompositeField.register_lookup(TupleIn)
+CompositeField.register_lookup(TupleIsNull)
 
 
 def unnest(fields):

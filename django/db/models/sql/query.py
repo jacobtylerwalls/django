@@ -307,8 +307,8 @@ class Query(BaseExpression):
         self.alias_refcount = {}
         # alias_map is the most important data structure regarding joins.
         # It's used for recording which joins exist in the query and what
-        # types they are. The key is the alias of the joined table (possibly
-        # the table name) and the value is a Join-like object (see
+        # types they are. The key is the alias of the joined table or table
+        # expression and the value is a Join-like object (see
         # sql.datastructures.Join for more information).
         self.alias_map = {}
         # Whether to provide alias to columns during reference resolving.
@@ -331,6 +331,9 @@ class Query(BaseExpression):
 
     @property
     def output_field(self):
+        # Simon: "Remove the hack ... on sql.Query.output_field"
+        # This code currently enforces that subqueries cannot be table-valued.
+        # We want to remove this limitation. What breaks when we remove this?
         if len(self.select) == 1:
             select = self.select[0]
             return getattr(select, "target", None) or select.field
@@ -1170,7 +1173,15 @@ class Query(BaseExpression):
                 join_type = INNER
             join.join_type = join_type
         join.table_alias = alias
-        self.alias_map[alias] = join
+        # Simon: aliasing a subquery "becomes much easier ... as any expression
+        # that has .output_field.is_composite can be treated as a candidate for
+        # alias_map inclusion.
+        # XXX: Trace this higher, see where users would set .output_field, make
+        # sure this reaches here.
+        if join.is_composite:
+            self.alias_map[alias] = join
+        else:
+            raise Exception(...)
         if filtered_relation := join.filtered_relation:
             resolve_reuse = reuse
             if resolve_reuse is not None:
