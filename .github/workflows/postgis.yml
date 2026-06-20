@@ -60,5 +60,19 @@ jobs:
       - name: Print geospatial versions
         run: |
           python -c "from django.contrib.gis import gdal, geos; print(f'GDAL: {gdal.gdal_version()}'); print(f'GEOS: {geos.geos_version()}')"
-      - name: Run PostGIS tests
-        run: python -Wall tests/runtests.py -v2 --settings=test_postgis
+      - name: Run tests
+        timeout-minutes: 10
+        env:
+          HANG_DUMP_DIR: ${{ runner.temp }}/hangs
+        working-directory: tests
+        run: |
+          mkdir "${{ runner.temp }}/hangs"
+          python runtests.py --settings=test_postgis --parallel=4 --verbosity=1
+
+      - name: Upload hang dumps  #
+        if: always()                 # runs because the step failed on timeout, not job-cancel
+        uses: actions/upload-artifact@v4
+        with:
+          name: hang-dumps-${{ github.run_id }}
+          path: ${{ runner.temp }}/hangs/hang_*.txt
+          if-no-files-found: warn
