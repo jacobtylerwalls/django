@@ -29,4 +29,4 @@ _is_worker = multiprocessing.parent_process() is not None
 if _dump_dir and _is_worker:
     _f = open(os.path.join(_dump_dir, f"hang_{os.getpid()}.txt"), "w", buffering=1)
     faulthandler.enable(file=_f)
-    faulthandler.dump_traceback_later(300, repeat=False, exit=True, file=_f)
+    faulthandler.dump_traceback_later(300, repeat=False, exit=False, file=_f)
