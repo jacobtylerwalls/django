@@ -16,7 +16,7 @@ from django import forms
 from django.apps import apps
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.admin import helpers, widgets
+from django.contrib.admin import formfields, helpers, widgets
 from django.contrib.admin.checks import (
     BaseModelAdminChecks,
     InlineModelAdminChecks,
@@ -297,6 +297,20 @@ class BaseModelAdmin(metaclass=forms.MediaDefiningClass):
                     include_blank=db_field.blank, blank_choice=[("", _("None"))]
                 )
         return db_field.formfield(**kwargs)
+
+    def _formfield_for_search(self, db_field):
+        search_overrides = {
+            forms.BooleanField: formfields.StrictBooleanField,
+        }
+        formfield = db_field.formfield()
+        # Exact type check for now (NullBooleanField should not be replaced.)
+        try:
+            search_form_class = search_overrides[formfield.__class__]
+        except KeyError:
+            pass
+        else:
+            formfield.__class__ = search_form_class
+        return formfield
 
     def get_field_queryset(self, db, db_field, request):
         """
@@ -1360,31 +1374,23 @@ class ModelAdmin(BaseModelAdmin):
                 bit_lookups = []
                 for orm_lookup, validate_field in orm_lookups:
                     if validate_field is not None:
+                        formfield = self._formfield_for_search(validate_field)
                         try:
-                            if isinstance(validate_field, models.BooleanField):
-                                # forms.BooleanField.to_python() treats almost
-                                # any string as True. Parse boolean search
-                                # terms strictly instead, so that arbitrary
-                                # terms don't match every row with a True
-                                # value.
-                                value = forms.NullBooleanField().to_python(bit)
-                                if value is None:
-                                    # Skip this lookup for non-boolean terms.
-                                    continue
+                            if formfield is None:
+                                # Fields like AutoField lack a form field.
+                                value = validate_field.to_python(bit)
+                            elif isinstance(
+                                formfield,
+                                (
+                                    forms.TypedChoiceField,
+                                    forms.TypedMultipleChoiceField,
+                                ),
+                            ):
+                                # Workaround for issue #34156.
+                                value = formfield.clean(bit)
                             else:
-                                formfield = validate_field.formfield()
-                                if formfield is not None:
-                                    value = formfield.to_python(bit)
-                                else:
-                                    # Fields like AutoField lack a form field.
-                                    value = bit
-                                if isinstance(value, str):
-                                    # Form fields such as TypedChoiceField may
-                                    # return the string unconverted. Ensure
-                                    # the model field accepts the value, so
-                                    # that filtering on it cannot crash.
-                                    value = validate_field.to_python(value)
-                        except (TypeError, ValueError, ValidationError):
+                                value = formfield.to_python(bit)
+                        except ValidationError:
                             # Skip this lookup for invalid values.
                             continue
                     else:
