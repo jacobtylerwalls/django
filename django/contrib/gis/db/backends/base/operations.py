@@ -117,7 +117,7 @@ class BaseSpatialOperations:
 
     @staticmethod
     def _must_transform_value(value, field):
-        return value is not None and value.srid != field.srid
+        return value is not None and field.srid is not None and value.srid != field.srid
 
     def get_geom_placeholder_sql(self, f, value, compiler):
         """
@@ -138,10 +138,9 @@ class BaseSpatialOperations:
             sql = f"{transform_func}({self.from_text}(%s, %s), %s)"
             params = (value, value.srid, f.srid)
             return sql, params
-        elif self.connection.features.has_spatialrefsys_table:
+        elif f.srid is not None and self.connection.features.has_spatialrefsys_table:
             return f"{self.from_text}(%s, %s)", (value, f.srid)
         else:
-            # For backwards compatibility on MySQL (#27464).
             return f"{self.from_text}(%s)", (value,)
 
     def check_expression_support(self, expression):

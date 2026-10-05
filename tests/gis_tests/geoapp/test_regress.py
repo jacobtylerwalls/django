@@ -1,12 +1,15 @@
+from contextlib import nullcontext
 from datetime import datetime
 
-from django.contrib.gis.db.models import Extent
+from django.contrib.gis.db.models import Extent, PolygonField
+from django.contrib.gis.geos import Polygon
 from django.contrib.gis.shortcuts import render_to_kmz
-from django.db.models import Count, Min
-from django.test import TestCase, skipUnlessDBFeature
+from django.db import DatabaseError, connection, transaction
+from django.db.models import Count, Min, Value
+from django.test import TestCase, TransactionTestCase, skipUnlessDBFeature
 
 from ..utils import skipUnlessGISLookup
-from .models import City, PennsylvaniaCity, State, Truth
+from .models import City, NoneSRID, PennsylvaniaCity, State, Truth
 
 
 class GeoRegressionTests(TestCase):
@@ -109,3 +112,34 @@ class GeoRegressionTests(TestCase):
         # verify values
         self.assertIs(val1, True)
         self.assertIs(val2, False)
+
+    def test_no_transform_attempted_for_undefined_field_srid_expression(self):
+        poly = Polygon.from_bbox((0, 0, 2, 2))
+        state = State.objects.create(poly=poly)
+        expr = Value(poly, output_field=PolygonField())
+        NoneSRID.objects.filter(pk=state.pk).update(poly=expr)
+        state.refresh_from_db()
+        self.assertEqual(state.poly.srid, 4326)
+
+
+class GeoRegressionTransactionTests(TransactionTestCase):
+    available_apps = ["gis_tests.geoapp"]
+
+    def test_no_transform_attempted_for_undefined_field_srid(self):
+        poly = Polygon.from_bbox((0, 0, 2, 2))
+        state = State.objects.create(poly=poly)
+        will_raise = (
+            connection.ops.from_text and connection.features.has_spatialrefsys_table
+        )
+        with (
+            transaction.atomic(),
+            # With srid=None, the literal-value path omits the SRID argument
+            # to from_text(), causing an error on Oracle and SpatiaLite.
+            # Passing the input geometry's SRID, as the Value expression does,
+            # could allow this write to succeed without a transaction test.
+            self.assertRaises(DatabaseError) if will_raise else nullcontext(),
+        ):
+            NoneSRID.objects.filter(pk=state.pk).update(poly=poly)
+        if not will_raise:
+            state.refresh_from_db()
+            self.assertEqual(state.poly.srid, 4326)
